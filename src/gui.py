@@ -1,3 +1,4 @@
+import codecs
 import os
 import time
 import sys
@@ -29,11 +30,13 @@ class MainWindow(QtGui.QWidget):
 		self.layout.addWidget(self.webview)
 
 		self.thread_pool = []
-	
+
+	# on click	
 	# start sniffing in bg
 	
 	# start query timer
-	# reset query timer on list_click
+	# if new ssid to be mapped: dont allow if query timer not 0
+	# reset query timer to X on click
 	
 	
 	def update_ssid_list(self, ssids):
@@ -44,14 +47,17 @@ class MainWindow(QtGui.QWidget):
 	def display_google_map(self, list_item_txt):
 		ssid = ' '.join(str(list_item_txt.text()).split()[2:])
 		with Database('ssids.db') as db:
-			if ssid in db.queried_ssids:
-				gmap.map_ssid_coords(ssid)
+			if ssid in db.mapped_ssids:
+				html = db.get_ssid_map(ssid)
+				self.webview.setHtml(html)
 			else:
 				gmap.wigle_query(ssid)
 				gmap.map_ssid_coords(ssid)
-		file_str = '{0}/ssid_html/{1}.html'.format(os.path.abspath('../'), ssid.replace(' ', '_'))
-		with open(file_str, 'r') as f:
-			self.webview.setHtml(f.read())
+				file_str = '{0}/ssid_html/{1}.html'.format(os.path.abspath('../'), ssid.replace(' ', '_'))
+				with open(file_str, 'r') as f:
+					html = f.read()
+					db.insert_ssid_map(ssid, html)
+					self.webview.setHtml(html)
 
 	def run_list(self):
 		lister = ListWorker()
