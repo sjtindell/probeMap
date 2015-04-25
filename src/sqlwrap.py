@@ -20,6 +20,17 @@ class Database(object):
 			self.conn.commit()
 			self.conn.close()
 
+	@property
+	def ssids(self):
+		self.cursor.execute('SELECT * FROM mac_to_ssid')
+		return self.cursor.fetchall()
+
+	@property
+	def queried_ssids(self):
+		self.cursor.execute('SELECT * FROM ssid_to_coords')
+		return [location[0] for location in self.cursor.fetchall()]
+		
+
 	def create_mac_ssid_table(self):
 		self.cursor.execute('''CREATE TABLE mac_to_ssid
 				(mac, ssid)''')
@@ -47,4 +58,3 @@ class Database(object):
 		self.cursor.execute(cmd)
 		return self.cursor.fetchall()
 
-		

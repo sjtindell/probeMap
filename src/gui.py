@@ -1,10 +1,14 @@
+import os
+import time
 import sys
 from PyQt4 import QtCore, QtGui, QtWebKit
 import gmap
+from sqlwrap import Database
+
 
 class MainWindow(QtGui.QWidget):
 
-    def __init__(self, parent=None):
+	def __init__(self, parent=None):
 
 		QtGui.QWidget.__init__(self, parent)
 
@@ -13,49 +17,71 @@ class MainWindow(QtGui.QWidget):
 
 		self.layout = QtGui.QVBoxLayout(self)
 
-		self.map_btn = QtGui.QPushButton('map ssid')
-		self.connect(self.map_btn, QtCore.SIGNAL("released()"), self.run)
+		self.list_btn = QtGui.QPushButton('list ssids')
+		self.connect(self.list_btn, QtCore.SIGNAL("released()"), self.run_list)
 
-		self.data_widget = QtGui.QTextEdit()
-
+		self.data_widget = QtGui.QListWidget()
+		self.data_widget.currentItemChanged.connect(self.display_google_map)
 		self.webview = QtWebKit.QWebView()
-		self.webview.setHtml(gmap)
 
-		self.layout.addWidget(self.map_btn)
+		self.layout.addWidget(self.list_btn)
 		self.layout.addWidget(self.data_widget)
 		self.layout.addWidget(self.webview)
 
-		# threading
-		# self.work_thread = None
 		self.thread_pool = []
+	
+	# start sniffing in bg
+	
+	# start query timer
+	# reset query timer on list_click
+	
+	
+	def update_ssid_list(self, ssids):
+		self.data_widget.clear()
+		for mac, ssid in ssids:
+			self.data_widget.addItem('{0} -> {1}'.format(mac, ssid))
 
-    def run(self):
+	def display_google_map(self, list_item_txt):
+		ssid = ' '.join(str(list_item_txt.text()).split()[2:])
+		with Database('ssids.db') as db:
+			if ssid in db.queried_ssids:
+				gmap.map_ssid_coords(ssid)
+			else:
+				gmap.wigle_query(ssid)
+				gmap.map_ssid_coords(ssid)
+		file_str = '{0}/ssid_html/{1}.html'.format(os.path.abspath('../'), ssid.replace(' ', '_'))
+		with open(file_str, 'r') as f:
+			self.webview.setHtml(f.read())
 
-        self.data_widget.clear()
+	def run_list(self):
+		lister = ListWorker()
+		lister.list_update.connect(self.update_ssid_list)
+		self.thread_pool.append(lister)
+		lister.start()
 
-        # connect to signal from different thread
-        # self.work_thread = WorkThread()
-        self.thread_pool.append(Worker())
-        #self.connect(self.thread_pool[-1], 
-			#QtCore.SIGNAL('update(QSTRING)', self.func)
+		
 
 
-class Worker(QtCore.QThread):
-    def __init__(self):
-        QtCore.QThread.__init__(self)
+class ListWorker(QtCore.QThread):
 
-    def __del__(self):
-        self.wait()
+	list_update = QtCore.pyqtSignal(object)
 
-    def run(self):
-        #for _ in range(500):
-            #time.sleep(0.1)  # artificial time delay
-            #self.emit(QtCore.SIGNAL('update(QString)'), "update")
-		self.terminate()
+	def __init__(self):
+		QtCore.QThread.__init__(self)
+
+	def __del__(self):
+		self.wait()
+
+	def run(self):
+		while True:
+			time.sleep(1)
+			with Database('ssids.db') as db:
+				self.list_update.emit(db.ssids)
+			self.terminate()
 
 
 if __name__ == '__main__':
-    app = QtGui.QApplication([])
-    window = MainWindow()
-    window.show()
-    sys.exit(app.exec_())
+	app = QtGui.QApplication([])
+	window = MainWindow()
+	window.show()
+	sys.exit(app.exec_())
