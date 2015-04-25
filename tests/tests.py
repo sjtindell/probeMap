@@ -1,18 +1,23 @@
-import NAME
 import unittest
+from db_api import Database
+import sniffer
 
 
-class Test(unittest.TestCase):
+class SniffTest(unittest.TestCase):
+	pass	
+
+
+class DatabaseTest(unittest.TestCase):
 	
-	def setup(self):
-		print('setup!')
+	def setUp(self):
+		self.db = Database('ssids.db')
 
-	def teardown(self):
+	def tearDown(self):
 		print('tear down!')
 
-	def test_basic(self):
-		print('i ran!')
+	def test_database_mac_to_ssid_rows_match_format(self):
+		pass	
+		
+				
 
 
-if __name__ == '__main__':
-	unittest.main()

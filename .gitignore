@@ -3,3 +3,5 @@ tips
 __pycache__
 env
 src/ssids.db
+ssid_map.html
+ssids.db

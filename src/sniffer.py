@@ -1,6 +1,7 @@
 import sqlite3
 from scapy.all import sniff, Dot11
-from db_api import Database
+from sqlwrap import Database
+
 
 found_ssids = [ ]
 
@@ -16,4 +17,6 @@ def check_packet(pckt):
 			db.insert_mac_ssid(repr(pckt.addr2), repr(pckt.info))
 	return
 
-sniff(iface="mon0", prn=check_packet)
+if __name__ == '__main__':
+	sniff(iface="mon0", prn=check_packet)
+
