@@ -1,10 +1,10 @@
-import codecs
 import os
 import time
 import sys
 from PyQt4 import QtCore, QtGui, QtWebKit
 import gmap
 from sqlwrap import Database
+from scraper import WigleQuery
 
 
 class MainWindow(QtGui.QWidget):
@@ -50,8 +50,10 @@ class MainWindow(QtGui.QWidget):
 			if ssid in db.mapped_ssids:
 				html = db.get_ssid_map(ssid)
 				self.webview.setHtml(html)
-			else:
-				gmap.wigle_query(ssid)
+			else:				
+				response = WigleQuery(ssid)
+				for lat, lon in response.coords:
+					db.insert_ssid_coords(repr(ssid), lat, lon)
 				gmap.map_ssid_coords(ssid)
 				file_str = '{0}/ssid_html/{1}.html'.format(os.path.abspath('../'), ssid.replace(' ', '_'))
 				with open(file_str, 'r') as f:
@@ -66,8 +68,6 @@ class MainWindow(QtGui.QWidget):
 		lister.start()
 
 		
-
-
 class ListWorker(QtCore.QThread):
 
 	list_update = QtCore.pyqtSignal(object)

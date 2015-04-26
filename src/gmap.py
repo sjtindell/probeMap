@@ -1,13 +1,5 @@
 import pygmaps
-from scraper import WigleQuery
 from sqlwrap import Database
-
-
-def wigle_query(ssid):
-	with Database('ssids.db') as db:
-		response = WigleQuery(ssid)
-		for lat, lon in response.coords:
-			db.insert_ssid_coords(repr(ssid), lat, lon)
 
 
 def draw_map(ssid, coords):
@@ -22,8 +14,4 @@ def map_ssid_coords(ssid):
 	with Database('ssids.db') as db:
 		coords = db.get_ssid_coords(ssid)
 		draw_map(ssid, coords)
-
-
-
-
 
