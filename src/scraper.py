@@ -33,3 +33,4 @@ class WigleQuery(object):
 				yield q[0], q[1]
 
 
+

@@ -6,7 +6,7 @@ def draw_map(ssid, coords):
 	gmap = pygmaps.maps('0', '0', '2')
 	for location in coords:
 		lat, lon = location
-		gmap.addpoint(lat, lon, '#FF0000')
+		gmap.addpoint(float(lat), float(lon), '#FF0000')
 	gmap.draw('../ssid_html/{0}.html'.format(ssid.replace(' ', '_')))
 
 

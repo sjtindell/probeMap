@@ -1,4 +1,4 @@
-#! /usr/env/python
+# scapy wrapper to start sniff function with packet checker
 
 import sqlite3
 from scapy.all import sniff, Dot11
@@ -16,6 +16,6 @@ def check_packet(pckt):
 				db.insert_mac_ssid(pckt.addr2, pckt.info)
 	return
 
-if __name__ == '__main__':
-	sniff(iface="mon0", prn=check_packet)
+def watch(iface):
+	sniff(iface=iface, prn=check_packet)
 
