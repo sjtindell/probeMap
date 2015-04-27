@@ -60,21 +60,20 @@ class Database(object):
 		cmd = 'INSERT INTO ssid_to_map VALUES (?, ?)'
 		self.cursor.execute(cmd, (ssid, html_string,))
 		
-	def get_rows(self, table, stop=1, start=1):
-		string = 'SELECT * FROM {0} LIMIT {1}, {2}'
-		cmd = string.format(table, start, stop)
+	def get_rows(self, table):
+		string = 'SELECT * FROM {0}'
+		cmd = string.format(table)
 		self.cursor.execute(cmd)
 		return self.cursor.fetchall()
 
 	def get_ssid_coords(self, ssid):
-		cmd = 'SELECT lattitude, longitude FROM ssid_to_coords WHERE ssid={0}'.format(repr(ssid))
-		self.cursor.execute(cmd)
+		cmd = 'SELECT lattitude, longitude FROM ssid_to_coords WHERE ssid LIKE ?'
+		self.cursor.execute(cmd, (ssid,))
 		return self.cursor.fetchall()
 
 	def get_ssid_map(self, ssid):
-		cmd = 'SELECT html_string FROM ssid_to_map WHERE ssid={0}'.format(repr(ssid))
-		self.cursor.execute(cmd)
+		cmd = 'SELECT html_string FROM ssid_to_map WHERE ssid=?'
+		self.cursor.execute(cmd, (ssid,))
 		html_string = self.cursor.fetchall()[0][0]
 		return html_string
-
 

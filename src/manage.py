@@ -14,7 +14,16 @@ if __name__ == '__main__':
 	if arg == 'del':
 		table = sys.argv[2]
 		with Database('ssids.db') as db:
-			db.cursor.execute('DELETE FROM {0}'.format(table))
+				if table == 'all':
+					cmds = (
+						'DELETE FROM mac_to_ssid',
+						'DELETE FROM ssid_to_coords',
+						'DELETE FROM ssid_to_map'
+					)
+					for cmd in cmds:
+						db.cursor.execute(cmd)
+				else:
+					db.cursor.execute('DELETE FROM {0}'.format(table))
 	elif arg == 'see':
 		table = sys.argv[2]
 		with Database('ssids.db') as db:
