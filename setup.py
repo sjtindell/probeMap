@@ -4,16 +4,15 @@ except ImportError:
 	from disutils.core import setup
 
 config = {
-	'description': 'My Project',
+	'description': 'Sniff probe requests, google map router names.',
 	'author': 'sam tindell',
-	'url': 'URL to get it at',
-	'download_url': 'Where to download it.',
-	'author_email': 'sjtindell@gmail',
+	'download_url': 'https://github.com/sjtindell/probeMap',
+	'author_email': 'sjtindell@gmail.com',
 	'version': '0.1',
 	'install_requires': ['nose'],
-	'packages': ['src'],
+	'packages': ['src', 'tests'],
 	'scripts': [],
-	'name': 'projectname'
+	'name': 'probeMap'
 }
 
 setup(**config)
