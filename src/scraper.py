@@ -11,7 +11,7 @@ class WigleQuery(object):
 	@property
 	def response(self):
 		wigle_api = 'https://wigle.net/gps/gps/main/confirmquery/?'
-		cookie = 'auth=sjtindell%3A767294143%3A1413791126%3ANvAGsspBk%2B6SAsON%2FiRNiw'
+		cookie = ''
 		headers = {'Accept-Encoding': 'text/plain', 'Cookie': cookie}
 		params = {'ssid': self.ssid}
 

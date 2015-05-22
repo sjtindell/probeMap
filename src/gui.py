@@ -34,7 +34,7 @@ class MainWindow(QtGui.QWidget):
 
 		self.thread_pool = []
 
-		sniffer = SniffWorker('mon0')
+		sniffer = SniffWorker('wlan0')
 		self.thread_pool.append(sniffer)
 		sniffer.start()
 
@@ -60,7 +60,7 @@ class MainWindow(QtGui.QWidget):
 	def new_map(self, ssid):
 		query = WigleQuery(ssid)
 		# db open
-		with Database('ssids.db') as db:
+		with Database('../ssids.db') as db:
 			for lat, lon in query.coords:
 				db.insert_ssid_coords(ssid, lat, lon)
 		# db open
@@ -69,7 +69,7 @@ class MainWindow(QtGui.QWidget):
 		with open(file_str, 'r') as f:
 			html = f.read()
 			# db open
-			with Database('ssids.db') as db:
+			with Database('../ssids.db') as db:
 				db.insert_ssid_map(ssid, html)
 			self.webview.setHtml(html)
 
@@ -84,7 +84,7 @@ class MainWindow(QtGui.QWidget):
 			ssid  = ''
 
 		if ssid:
-			with Database('ssids.db') as db:
+			with Database('../ssids.db') as db:
 				if ssid in db.mapped_ssids:
 					html = db.get_ssid_map(ssid)
 					self.webview.setHtml(html)
@@ -117,7 +117,7 @@ class ListWorker(QtCore.QThread):
 		self.wait()
 
 	def run(self):
-		with Database('ssids.db') as db:
+		with Database('../ssids.db') as db:
 			self.list_update.emit(db.ssids)
 		self.terminate()
 
