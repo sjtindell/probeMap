@@ -1,5 +1,7 @@
 # probeMap
 
+Updating for the Github code freeze.
+
 Gather SSIDs (router names) from surrounding devices
 and google-map them in a GUI interface.
 
