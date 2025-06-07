@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import sys
 import sqlite3
 from sqlwrap import Database
@@ -23,11 +25,11 @@ if __name__ == '__main__':
 					for cmd in cmds:
 						db.cursor.execute(cmd)
 				else:
-					db.cursor.execute('DELETE FROM {0}'.format(table))
+					db.cursor.execute(f'DELETE FROM {table}')
 	elif arg == 'see':
 		table = sys.argv[2]
 		with Database('ssids.db') as db:
-			print db.get_rows('mac_to_ssid', 10)
+			print(db.get_rows('mac_to_ssid', 10))
 	else:
 		with Database('ssids.db') as db:
 			db.create_mac_ssid_table()

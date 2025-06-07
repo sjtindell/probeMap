@@ -2,36 +2,52 @@
 
 A tool that gathers SSIDs (router names) from surrounding devices and displays them on a Google Maps interface.
 
-## Features
-- Scapy packet sniffing for SSID detection
-- Google Maps integration with SQLite database storage
-- GUI interface built with PyQt4
+## macOS Quickstart
 
-## Dependencies and Installation
+1. Create and activate a virtual environment:
+   ```bash
+   uv venv
+   source venv/bin/activate
+   ```
 
-### System Requirements
-```bash
-apt-get install build-essential wget git
-apt-get install python2.7-dev python-pip 
-apt-get install libxext-dev python-qt4 qt4-dev-tools 
-```
+2. Install dependencies:
+   ```bash
+   uv pip install -r requirements.txt
+   uv pip install PyQt6
+   ```
 
-### Python Dependencies
-```bash
-wget https://pygmaps.googlecode.com/files/pygmaps-0.1.1.tar.gz
-tar -zxvf pygmaps-0.1.1.tar.gz
-cd pygmaps-0.1.1 && python setup.py install
+3. Install pygmaps (from Google Code archive):
+   ```bash
+   curl -LO https://storage.googleapis.com/google-code-archive-source/v2/code.google.com/pygmaps/source-archive.zip
+   unzip source-archive.zip
+   cd pygmaps/trunk
+   python setup.py install
+   cd ../..
+   ```
 
-pip install -r requirements.txt
-```
+4. Put your wireless interface in monitor mode (using built-in airport utility):
+   ```bash
+   sudo /System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport en0 sniff 1
+   ```
+
+5. Run the application:
+   ```bash
+   cd src
+   python gui.py
+   ```
+
+Note: You'll need to run the application with sudo privileges to access the wireless interface in monitor mode.
 
 ## TODO
 
+### High Priority
 - [ ] Add TravisCI integration with build status
 - [ ] Add quickstart documentation
 - [ ] Configure setup.py and set up package for pip installation
 - [ ] Add logging module
+- [ ] Add unit tests
 
+### Features
 - [ ] Add dates to mac_to_ssid table and display on widget
 - [ ] Add query timer
 - [ ] Add authentication key management:
@@ -39,13 +55,14 @@ pip install -r requirements.txt
   - [ ] Add page to get auth key
   - [ ] Implement secure storage
 
+### Technical Improvements
 - [ ] Remove pygmaps middle step and drawing of HTML files (draw directly to DB)
-- [ ] Add comprehensive test suite
 - [ ] Optimize database operations:
   - [ ] Reduce database open operations
   - [ ] Move more operations to sqlwrap
   - [ ] Improve manage.py functionality
 
+### Code Quality
 - [ ] General code cleanup
 - [ ] Reduce module count and improve organization
 - [ ] Add automatic wireless card monitor mode configuration

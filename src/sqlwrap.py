@@ -1,20 +1,20 @@
+#!/usr/bin/env python3
+
 import sqlite3
 
-class Database(object):
+class Database:
 	
 	def __init__(self, filename):
 		self.conn = sqlite3.connect(filename)
 		self.cursor = self.conn.cursor()
 
 	# enter and exit methods allow use
-	# of the pythonic "with" statement
-	# and setup/teardown
+	# of "with"
 	def __enter__(self):
 		return self
 
 	def __exit__(self, exctype, excinst, exctb):
 		if exctype == Exception:
-			# logging.exception('some text')
 			pass
 		else:
 			self.conn.commit()
@@ -50,19 +50,18 @@ class Database(object):
 		
 	def insert_mac_ssid(self, mac, ssid):
 		cmd = 'INSERT INTO mac_to_ssid VALUES (?, ?)'	
-		self.cursor.execute(cmd, (mac, ssid,))
+		self.cursor.execute(cmd, (mac, ssid))
 
 	def insert_ssid_coords(self, ssid, lat, lon):
 		cmd = 'INSERT INTO ssid_to_coords VALUES (?, ?, ?)'
-		self.cursor.execute(cmd, (ssid, lat, lon,))
+		self.cursor.execute(cmd, (ssid, lat, lon))
 
 	def insert_ssid_map(self, ssid, html_string):
 		cmd = 'INSERT INTO ssid_to_map VALUES (?, ?)'
-		self.cursor.execute(cmd, (ssid, html_string,))
+		self.cursor.execute(cmd, (ssid, html_string))
 		
 	def get_rows(self, table):
-		string = 'SELECT * FROM {0}'
-		cmd = string.format(table)
+		cmd = f'SELECT * FROM {table}'
 		self.cursor.execute(cmd)
 		return self.cursor.fetchall()
 
