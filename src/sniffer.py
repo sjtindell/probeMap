@@ -32,8 +32,17 @@ class BaseSniffer:
 class MacSniffer(BaseSniffer):
     def _run(self):
         try:
-            # tcpdump command to capture probe requests
-            cmd = ['sudo', 'tcpdump', '-i', self.interface, '-I', '-n', '-l', '-e', 'type mgt subtype probe-req']
+            # Enhanced tcpdump command to capture more information
+            cmd = ['sudo', 'tcpdump', 
+                   '-i', self.interface,
+                   '-I',  # Monitor mode
+                   '-n',  # Don't convert addresses to names
+                   '-l',  # Line buffered
+                   '-e',  # Print link-level header
+                   '-t',  # Don't print timestamp
+                   'type mgt subtype probe-req']  # Only probe requests
+            
+            print(f"Starting tcpdump with command: {' '.join(cmd)}")
             process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
             
             # Updated regex to match the actual tcpdump output format
@@ -49,8 +58,12 @@ class MacSniffer(BaseSniffer):
                     mac, ssid = match.groups()
                     if ssid:  # Only process if SSID is not empty
                         print(f"Found SSID: {ssid} from MAC: {mac}")
-                        with Database('../ssids.db') as db:
-                            db.insert_mac_ssid(mac, ssid)
+                        try:
+                            with Database('../ssids.db') as db:
+                                db.insert_mac_ssid(mac, ssid)
+                                print(f"Added to database: {mac} -> {ssid}")
+                        except Exception as e:
+                            print(f"Database error: {e}")
             
             process.terminate()
             
