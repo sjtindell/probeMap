@@ -1,6 +1,7 @@
 # probeMap
 
-A tool that gathers SSIDs (router names) from surrounding devices and displays them on a Google Maps interface.
+A tool that gathers SSIDs (router names) from probe requests broadcast by 
+surrounding devices and displays them on a Google Maps interface.
 
 ## macOS Quickstart
 
@@ -13,7 +14,6 @@ A tool that gathers SSIDs (router names) from surrounding devices and displays t
 2. Install dependencies:
    ```bash
    uv pip install -r requirements.txt
-   uv pip install PyQt6
    ```
 
 3. Install pygmaps (from Google Code archive):
@@ -25,15 +25,9 @@ A tool that gathers SSIDs (router names) from surrounding devices and displays t
    cd ../..
    ```
 
-4. Put your wireless interface in monitor mode (using built-in airport utility):
+4. Run the application:
    ```bash
-   sudo /System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport en0 sniff 1
-   ```
-
-5. Run the application:
-   ```bash
-   cd src
-   python gui.py
+   sudo python src/gui.py
    ```
 
 Note: You'll need to run the application with sudo privileges to access the wireless interface in monitor mode.
