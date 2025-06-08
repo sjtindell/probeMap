@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>probeMap</title>
+	<script>
+		function initMap() {
+			window.map = new google.maps.Map(document.getElementById("map"), {
+				zoom: 2,
+				center: {lat: 0, lng: 0}
+			});
+			window.markers = [];
+			window.bounds = new google.maps.LatLngBounds();
+		}
+	</script>
+	<script async defer
+		src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB41DRUbKWJHPxaFjMAwdrzWzbVKartNGg&callback=initMap">
+	</script>
+	<style>
+		#map {
+			height: 100%;
+			width: 100%;
+			position: absolute;
+			top: 0;
+			left: 0;
+		}
+		html, body {
+			height: 100%;
+			margin: 0;
+			padding: 0;
+		}
+	</style>
+</head>
+<body>
+	<div id="map"></div>
+</body>
+</html>

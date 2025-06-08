@@ -6,6 +6,7 @@ import platform
 import subprocess
 import threading
 import re
+import signal
 from sqlwrap import Database
 
 class BaseSniffer:
@@ -13,6 +14,7 @@ class BaseSniffer:
         self.interface = interface
         self.running = False
         self.thread = None
+        self.process = None
 
     def start(self):
         if not self.running:
@@ -23,8 +25,17 @@ class BaseSniffer:
 
     def stop(self):
         self.running = False
+        if self.process:
+            try:
+                self.process.terminate()
+                self.process.wait(timeout=1)
+            except:
+                try:
+                    self.process.kill()
+                except:
+                    pass
         if self.thread:
-            self.thread.join()
+            self.thread.join(timeout=1)
 
     def _run(self):
         raise NotImplementedError
@@ -32,8 +43,7 @@ class BaseSniffer:
 class MacSniffer(BaseSniffer):
     def _run(self):
         try:
-            # Enhanced tcpdump command to capture more information
-            cmd = ['sudo', 'tcpdump', 
+            cmd = ['tcpdump', 
                    '-i', self.interface,
                    '-I',  # Monitor mode
                    '-n',  # Don't convert addresses to names
@@ -43,20 +53,26 @@ class MacSniffer(BaseSniffer):
                    'type mgt subtype probe-req']  # Only probe requests
             
             print(f"Starting tcpdump with command: {' '.join(cmd)}")
-            process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
             
-            # Updated regex to match the actual tcpdump output format
+            self.process = subprocess.Popen(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                preexec_fn=os.setsid
+            )
+            
             probe_regex = re.compile(r'SA:(\w\w:\w\w:\w\w:\w\w:\w\w:\w\w).*Probe Request \(([^)]*)\)')
             
             while self.running:
-                line = process.stdout.readline()
+                line = self.process.stdout.readline()
                 if not line:
                     break
                 
                 match = probe_regex.search(line)
                 if match:
                     mac, ssid = match.groups()
-                    if ssid:  # Only process if SSID is not empty
+                    if ssid:
                         print(f"Found SSID: {ssid} from MAC: {mac}")
                         try:
                             with Database('../ssids.db') as db:
@@ -65,11 +81,15 @@ class MacSniffer(BaseSniffer):
                         except Exception as e:
                             print(f"Database error: {e}")
             
-            process.terminate()
-            
         except Exception as e:
             print(f"Error in tcpdump capture: {e}")
+        finally:
             self.running = False
+            if self.process:
+                try:
+                    os.killpg(os.getpgid(self.process.pid), signal.SIGTERM)
+                except:
+                    pass
 
 class LinuxSniffer(BaseSniffer):
     def _run(self):
