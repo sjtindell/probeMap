@@ -67,7 +67,7 @@ def add_point(map_html, lat, lng, title):
 
 def map_ssid_coords(ssid):
 	map_html = create_map()
-	with Database('../ssids.db') as db:
+	with Database('probemap.db') as db:
 		for lat, lon in db.get_ssid_coords(ssid):
 			map_html = add_point(map_html, float(lat), float(lon), ssid)
 	

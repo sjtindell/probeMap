@@ -29,7 +29,7 @@ class Database:
 			self.conn.rollback()
 		else:
 			self.conn.commit()
-		self.conn.close()
+			self.conn.close()
 
 	@property
 	def ssids(self):

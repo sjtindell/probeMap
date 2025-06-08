@@ -12,13 +12,13 @@ def create_tables():
 
 def reset_tables():
 	with Database('probemap.db') as db:
-		cmds = (
+					cmds = (
 			'DROP TABLE IF EXISTS mac_to_ssid',
 			'DROP TABLE IF EXISTS ssid_to_coords',
 			'DROP TABLE IF EXISTS ssid_to_map'
-		)
-		for cmd in cmds:
-			db.cursor.execute(cmd)
+					)
+					for cmd in cmds:
+						db.cursor.execute(cmd)
 	create_tables()
 
 def see_table(table):

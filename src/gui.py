@@ -24,39 +24,31 @@ class MainWindow(QtWidgets.QWidget):
 		self.setWindowTitle('probeMap')
 		self.setGeometry(1000, 800, 800, 800)
 
-		# Create main layout
 		self.layout = QtWidgets.QVBoxLayout(self)
 
-		# Create splitter for resizable panes
 		self.splitter = QtWidgets.QSplitter(Qt.Orientation.Vertical)
 		self.layout.addWidget(self.splitter)
 
-		# Top pane for SSID list
 		self.top_widget = QtWidgets.QWidget()
 		self.top_layout = QtWidgets.QVBoxLayout(self.top_widget)
 		self.data_widget = QtWidgets.QListWidget()
 		self.top_layout.addWidget(self.data_widget)
 		self.splitter.addWidget(self.top_widget)
 
-		# Bottom pane for map
 		self.map_widget = QWebEngineView()
 		self.splitter.addWidget(self.map_widget)
 
-		# Set initial sizes
 		self.splitter.setSizes([300, 500])
 
 		self.thread_pool = []
 
-		# Start packet capture
 		self.packet_sniffer = sniffer.watch('en0')
 		
-		# Start periodic list updates
 		self.update_timer = QtCore.QTimer()
 		self.update_timer.timeout.connect(self.update_list)
 		self.update_timer.start(2000)  # Update every 2 seconds
 		self.update_list()
 
-		# Create initial map
 		self.update_map()
 
 	# on click	
@@ -83,18 +75,19 @@ class MainWindow(QtWidgets.QWidget):
 			self.data_widget.addItem(f'{mac} -> {ssid}')
 
 	def update_map(self):
-		# Create a new map
 		map_html = gmap.create_map()
-		
-		# Add pins for all known locations
 		with Database('probemap.db') as db:
-			for ssid in db.queried_ssids:
+			for mac, ssid in db.ssids:
 				coords = db.get_ssid_coords(ssid)
+				if not coords:
+					query = WigleQuery(ssid)
+					for lat, lon, country, region, city in query.coords:
+						db.insert_ssid_coords(ssid, lat, lon, country, region, city)
+					coords = db.get_ssid_coords(ssid)
 				for lat, lon, country, region, city in coords:
 					title = f"{ssid} ({city or ''}, {region or ''}, {country or ''})"
 					gmap.add_point(map_html, float(lat), float(lon), title)
-		
-		# Save and display the map
+					print(f"Added point: {title} at ({lat}, {lon})")
 		map_file = os.path.abspath("../map.html")
 		with open(map_file, 'w') as f:
 			f.write(map_html)
@@ -105,7 +98,7 @@ class MainWindow(QtWidgets.QWidget):
 		with Database('probemap.db') as db:
 			for lat, lon, country, region, city in query.coords:
 				db.insert_ssid_coords(ssid, lat, lon, country, region, city)
-		self.update_map()  # Update map after adding new coordinates
+		self.update_map()
 
 	def check_list_ssid(self, list_item):
 		try:
@@ -113,7 +106,6 @@ class MainWindow(QtWidgets.QWidget):
 			ssid_text = text.split()[2:]
 			ssid = ' '.join(ssid_text)
 			print(ssid)
-		# for when called by list btn click/change
 		except AttributeError:
 			ssid  = ''
 
