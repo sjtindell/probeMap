@@ -1,10 +1,5 @@
-Dockerfile
-tips
 *.pyc
 __pycache__
-env
-ssid_map.html
-ssids.db
-ssid_html
-dependencies
 .env
+.venv
+map.html

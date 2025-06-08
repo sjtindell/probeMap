@@ -1,59 +1,79 @@
 #!/usr/bin/env python3
 
-from urllib.parse import urlparse
-import requests
-from bs4 import BeautifulSoup
-import logging
 import os
+import requests
+import logging
+from urllib.parse import quote
+from sqlwrap import Database
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class WigleQuery:
-
 	def __init__(self, ssid, auth_token=None):
 		self.ssid = ssid
-		self.auth_token = auth_token or os.getenv('WIGLE_AUTH_TOKEN')
+		self.auth_token = auth_token or os.getenv('WIGLE_API_TOKEN')
 		if not self.auth_token:
-			logger.warning("No Wigle auth token provided. Set WIGLE_AUTH_TOKEN environment variable or pass auth_token to constructor.")
+			logger.warning("No Wigle auth token provided. Set WIGLE_API_TOKEN environment variable or pass auth_token to constructor.")
 	
 	@property
 	def response(self):
-		wigle_api = 'https://wigle.net/gps/gps/main/confirmquery/?'
+		# Using the new API v2 endpoint for network search
+		wigle_api = 'https://api.wigle.net/api/v2/network/search'
 		headers = {
-			'Accept-Encoding': 'text/plain',
-			'Authorization': f'Basic {self.auth_token}',
-			'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'
+			'Accept': 'application/json',
+			'Authorization': f'Basic {self.auth_token}'
 		}
-		params = {'ssid': self.ssid}
+		params = {
+			'ssid': self.ssid,
+			'onlymine': 'false'
+		}
 
 		try:
-			logger.info(f"Querying Wigle for SSID: {self.ssid}")
+			logger.info(f"Querying Wigle API v2 for SSID: {self.ssid}")
 			response = requests.get(wigle_api, params=params, headers=headers)
 			response.raise_for_status()
-			html = BeautifulSoup(response.text, 'html.parser')
-			logger.info(f"Got response from Wigle: {len(response.text)} bytes")
-			return html
+			data = response.json()
+			logger.info(f"Got response from Wigle: {len(str(data))} bytes")
+			return data
 		except requests.exceptions.RequestException as e:
 			logger.error(f"Error querying Wigle: {e}")
 			return None
 
-	@property
-	def coords(self):
+	def store_results(self, db_path='../ssids.db'):
+		"""Store the query results in the database."""
 		if not self.response:
 			return []
 			
-		hrefs = [link.get('href') for link in self.response.find_all('a')]
-		logger.info(f"Found {len(hrefs)} links in response")
+		results = self.response.get('results', [])
+		logger.info(f"Found {len(results)} results in response")
 
-		for link in hrefs:
-			url = urlparse(link)
-			q = str(url.query).strip()
-			q = q.translate(str.maketrans('', '', 'maplt=onzoo'))
-			q = q.split('&')[0:2]
-			if q != ['']:
-				logger.info(f"Found coordinates: {q[0]}, {q[1]}")
-				yield q[0], q[1]
+		with Database(db_path) as db:
+			for result in results:
+				if 'trilat' in result and 'trilong' in result:
+					lat = result['trilat']
+					lon = result['trilong']
+					country = result.get('country')
+					region = result.get('region')
+					city = result.get('city')
+					
+					logger.info(f"Storing coordinates: {lat}, {lon} ({city}, {region}, {country})")
+					db.insert_ssid_coords(
+						self.ssid, 
+						str(lat), 
+						str(lon),
+						country,
+						region,
+						city
+					)
+					yield str(lat), str(lon)
+
+	@property
+	def coords(self):
+		"""Get coordinates from the database for this SSID."""
+		with Database('../ssids.db') as db:
+			for lat, lon, country, region, city in db.get_ssid_coords(self.ssid):
+				yield lat, lon
 
 
 
