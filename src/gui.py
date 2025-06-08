@@ -2,6 +2,7 @@
 
 import os
 import sys
+import logging
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtWebEngineWidgets import QWebEngineView
 from PyQt6.QtCore import Qt, QUrl
@@ -9,6 +10,9 @@ import gmap
 import sniffer
 from scraper import WigleQuery
 from sqlwrap import Database
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 def ensure_db():
 	with Database('probemap.db') as db:
@@ -76,28 +80,57 @@ class MainWindow(QtWidgets.QWidget):
 
 	def update_map(self):
 		map_html = gmap.create_map()
+		points_added = False
 		with Database('probemap.db') as db:
 			for mac, ssid in db.ssids:
 				coords = db.get_ssid_coords(ssid)
 				if not coords:
-					query = WigleQuery(ssid)
-					for lat, lon, country, region, city in query.coords:
-						db.insert_ssid_coords(ssid, lat, lon, country, region, city)
+					token = os.getenv('WIGLE_API_TOKEN')
+					if token:
+						logger.info(f"Using auth token: {token[:10]}...")
+					else:
+						logger.warning("No Wigle API token found in environment!")
+					query = WigleQuery(auth_token=token)
+					response = query.query(ssid)
+					logger.info(f"Got response for {ssid}: {len(response) if response else 0} results")
+					list(query.store_results(ssid, response, db_path='probemap.db'))
 					coords = db.get_ssid_coords(ssid)
 				for lat, lon, country, region, city in coords:
 					title = f"{ssid} ({city or ''}, {region or ''}, {country or ''})"
-					gmap.add_point(map_html, float(lat), float(lon), title)
-					print(f"Added point: {title} at ({lat}, {lon})")
-		map_file = os.path.abspath("../map.html")
-		with open(map_file, 'w') as f:
-			f.write(map_html)
-		self.map_widget.load(QUrl.fromLocalFile(map_file))
+					map_html = gmap.add_point(map_html, float(lat), float(lon), title)
+					points_added = True
+					logger.info(f"Added point: {title} at ({lat}, {lon})")
+		
+		if points_added:
+			# Use a fixed location in the project directory
+			project_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+			map_file = os.path.join(project_dir, "map.html")
+			with open(map_file, 'w') as f:
+				f.write(map_html)
+			logger.info(f"Writing map to {map_file}")
+			
+			# Load the map in Qt
+			url = QUrl.fromLocalFile(map_file)
+			logger.info(f"Loading map from URL: {url.toString()}")
+			self.map_widget.load(url)
+			
+			# Connect to loadFinished signal to verify map loaded
+			self.map_widget.loadFinished.connect(self.on_map_loaded)
+		else:
+			logger.warning("No points to display on map")
+
+	def on_map_loaded(self, success):
+		if success:
+			logger.info("Map loaded successfully in Qt")
+		else:
+			logger.error("Failed to load map in Qt")
 
 	def new_map(self, ssid):
-		query = WigleQuery(ssid)
+		token = os.getenv('WIGLE_API_TOKEN')
+		query = WigleQuery(auth_token=token)
+		response = query.query(ssid)
 		with Database('probemap.db') as db:
-			for lat, lon, country, region, city in query.coords:
-				db.insert_ssid_coords(ssid, lat, lon, country, region, city)
+			list(query.store_results(ssid, response, db_path='probemap.db'))
 		self.update_map()
 
 	def check_list_ssid(self, list_item):

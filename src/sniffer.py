@@ -69,6 +69,10 @@ class MacSniffer(BaseSniffer):
                 if not line:
                     break
                 
+                # Print all probe requests
+                if "Probe Request" in line:
+                    print(line.strip())
+                
                 match = probe_regex.search(line)
                 if match:
                     mac, ssid = match.groups()
@@ -132,4 +136,3 @@ def watch(interface):
 
 if __name__ == '__main__':
     watch('en0')
-

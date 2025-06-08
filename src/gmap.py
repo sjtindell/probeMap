@@ -10,14 +10,30 @@ def create_map():
 <head>
 	<title>probeMap</title>
 	<script>
+		var mapInitialized = false;
 		function initMap() {
+			console.log("Initializing map...");
 			window.map = new google.maps.Map(document.getElementById("map"), {
 				zoom: 2,
 				center: {lat: 0, lng: 0}
 			});
 			window.markers = [];
 			window.bounds = new google.maps.LatLngBounds();
+			window.mapReady = true;
+			mapInitialized = true;
+			console.log("Map initialized successfully");
 		}
+
+		// Check if map is ready every 100ms
+		function checkMapReady() {
+			if (!mapInitialized) {
+				console.log("Map not initialized yet, waiting...");
+				setTimeout(checkMapReady, 100);
+			} else {
+				console.log("Map is ready!");
+			}
+		}
+		checkMapReady();
 	</script>
 	<script async defer
 		src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB41DRUbKWJHPxaFjMAwdrzWzbVKartNGg&callback=initMap">
@@ -47,7 +63,9 @@ def add_point(map_html, lat, lng, title):
 	script = '''
 	<script>
 		function addMarker() {
-			if (window.map && window.markers && window.bounds) {
+			console.log("Attempting to add marker...");
+			if (window.mapReady && window.map && window.markers && window.bounds) {
+				console.log("Adding marker:", %s, %s, "%s");
 				var marker = new google.maps.Marker({
 					position: {lat: %s, lng: %s},
 					map: window.map,
@@ -56,12 +74,20 @@ def add_point(map_html, lat, lng, title):
 				window.markers.push(marker);
 				window.bounds.extend(marker.getPosition());
 				window.map.fitBounds(window.bounds);
+				console.log("Marker added successfully");
 			} else {
+				console.log("Map not ready, retrying...");
 				setTimeout(addMarker, 100);
 			}
 		}
-		addMarker();
-	</script>''' % (lat, lng, title)
+		// Wait for map to be ready before adding marker
+		if (mapInitialized) {
+			addMarker();
+		} else {
+			console.log("Waiting for map to initialize before adding marker...");
+			setTimeout(addMarker, 100);
+		}
+	</script>''' % (lat, lng, title, lat, lng, title)
 	return map_html.replace('</body>', script + '\n</body>')
 
 

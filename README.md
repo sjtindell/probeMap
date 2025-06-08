@@ -25,9 +25,14 @@ surrounding devices and displays them on a Google Maps interface.
    cd ../..
    ```
 
+4. Set your WIGLE_API_TOKEN in the env:
+```bash
+export WIGLE_API_TOKEN=""
+```
+
 4. Run the application:
    ```bash
-   sudo python src/gui.py
+   sudo -E python src/gui.py
    ```
 
 Note: You'll need to run the application with sudo privileges to access the wireless interface in monitor mode.
