@@ -37,16 +37,16 @@ class Database:
 
 		
 	def create_mac_ssid_table(self):
-		self.cursor.execute('''CREATE TABLE mac_to_ssid
-				(mac, ssid)''')
+		self.cursor.execute('''CREATE TABLE IF NOT EXISTS mac_to_ssid
+				(mac TEXT, ssid TEXT)''')
 
 	def create_ssid_coords_table(self):
-		self.cursor.execute('''CREATE TABLE ssid_to_coords
-			(ssid, lattitude, longitude)''')
+		self.cursor.execute('''CREATE TABLE IF NOT EXISTS ssid_to_coords
+			(ssid TEXT, lattitude TEXT, longitude TEXT)''')
 
 	def create_ssid_map_table(self):
-		self.cursor.execute('''CREATE TABLE ssid_to_map
-			(ssid, html_string)''')
+		self.cursor.execute('''CREATE TABLE IF NOT EXISTS ssid_to_map
+			(ssid TEXT, html_string TEXT)''')
 		
 	def insert_mac_ssid(self, mac, ssid):
 		cmd = 'INSERT INTO mac_to_ssid VALUES (?, ?)'	

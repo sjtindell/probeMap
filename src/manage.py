@@ -1,37 +1,36 @@
 #!/usr/bin/env python3
 
 import sys
-import sqlite3
 from sqlwrap import Database
 
-# for my initial testing, quickly build fresh db
-if __name__ == '__main__':
-	arg = None
-	
-	try:
-		arg = sys.argv[1]
-	except IndexError:
-		pass
 
-	if arg == 'del':
-		table = sys.argv[2]
-		with Database('ssids.db') as db:
-				if table == 'all':
-					cmds = (
-						'DELETE FROM mac_to_ssid',
-						'DELETE FROM ssid_to_coords',
-						'DELETE FROM ssid_to_map'
-					)
-					for cmd in cmds:
-						db.cursor.execute(cmd)
-				else:
-					db.cursor.execute(f'DELETE FROM {table}')
-	elif arg == 'see':
-		table = sys.argv[2]
-		with Database('ssids.db') as db:
-			print(db.get_rows('mac_to_ssid', 10))
+def create_tables():
+	with Database('ssids.db') as db:
+		db.create_mac_ssid_table()
+		db.create_ssid_coords_table()
+		db.create_ssid_map_table()
+
+def reset_tables():
+	with Database('ssids.db') as db:
+		cmds = (
+			'DROP TABLE IF EXISTS mac_to_ssid',
+			'DROP TABLE IF EXISTS ssid_to_coords',
+			'DROP TABLE IF EXISTS ssid_to_map'
+		)
+		for cmd in cmds:
+			db.cursor.execute(cmd)
+	create_tables()
+
+def see_table(table):
+	with Database('ssids.db') as db:
+		print(db.get_rows(table))
+
+if __name__ == '__main__':
+	arg = sys.argv[1] if len(sys.argv) > 1 else None
+	if arg in ('--reset', 'reset'):
+		reset_tables()
+	elif arg in ('--see', 'see'):
+		table = sys.argv[2] if len(sys.argv) > 2 else 'mac_to_ssid'
+		see_table(table)
 	else:
-		with Database('ssids.db') as db:
-			db.create_mac_ssid_table()
-			db.create_ssid_coords_table()
-			db.create_ssid_map_table()
+		create_tables()

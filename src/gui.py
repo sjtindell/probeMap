@@ -1,17 +1,19 @@
 #!/usr/bin/env python3
 
 import os
-import time
 import sys
-
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtWebEngineWidgets import QWebEngineView
-
 import gmap
 import sniffer
 from scraper import WigleQuery
 from sqlwrap import Database
 
+def ensure_db():
+	with Database('../ssids.db') as db:
+		db.create_mac_ssid_table()
+		db.create_ssid_coords_table()
+		db.create_ssid_map_table()
 
 class MainWindow(QtWidgets.QWidget):
 
@@ -23,22 +25,22 @@ class MainWindow(QtWidgets.QWidget):
 
 		self.layout = QtWidgets.QVBoxLayout(self)
 
-		self.list_btn = QtWidgets.QPushButton('list ssids')
-		self.list_btn.released.connect(self.update_list)
-
 		self.data_widget = QtWidgets.QListWidget()
-		self.data_widget.currentItemChanged.connect(self.check_list_ssid)
 		self.webview = QWebEngineView()
 
-		self.layout.addWidget(self.list_btn)
 		self.layout.addWidget(self.data_widget)
 		self.layout.addWidget(self.webview)
 
 		self.thread_pool = []
 
-		sniffer_worker = SniffWorker('en0')
-		self.thread_pool.append(sniffer_worker)
-		sniffer_worker.start()
+		# Start packet capture
+		self.packet_sniffer = sniffer.watch('en0')
+		
+		# Start periodic list updates
+		self.update_timer = QtCore.QTimer()
+		self.update_timer.timeout.connect(self.update_list)
+		self.update_timer.start(2000)  # Update every 2 seconds
+		self.update_list()
 
 	# on click	
 	# start sniffing in bg
@@ -91,7 +93,11 @@ class MainWindow(QtWidgets.QWidget):
 					self.webview.setHtml(html)
 					return
 			self.new_map(ssid)
-						
+
+	def closeEvent(self, event):
+		if hasattr(self, 'packet_sniffer'):
+			self.packet_sniffer.stop()
+		event.accept()
 
 
 class SniffWorker(QtCore.QThread):
@@ -124,6 +130,7 @@ class ListWorker(QtCore.QThread):
 
 
 if __name__ == '__main__':
+	ensure_db()
 	argv = sys.argv if len(sys.argv) > 0 else ["probeMap"]
 	app = QtWidgets.QApplication(argv)
 	window = MainWindow()
