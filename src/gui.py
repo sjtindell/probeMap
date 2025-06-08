@@ -3,8 +3,12 @@
 import os
 import sys
 import logging
+import http.server
+import socketserver
+import threading
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtWebEngineWidgets import QWebEngineView
+from PyQt6.QtWebEngineCore import QWebEnginePage
 from PyQt6.QtCore import Qt, QUrl
 import gmap
 import sniffer
@@ -40,6 +44,8 @@ class MainWindow(QtWidgets.QWidget):
 		self.splitter.addWidget(self.top_widget)
 
 		self.map_widget = QWebEngineView()
+		self.page = QWebEnginePage(self.map_widget)
+		self.map_widget.setPage(self.page)
 		self.splitter.addWidget(self.map_widget)
 
 		self.splitter.setSizes([300, 500])
@@ -53,15 +59,24 @@ class MainWindow(QtWidgets.QWidget):
 		self.update_timer.start(2000)  # Update every 2 seconds
 		self.update_list()
 
+		# Start local server
+		self.port = 8000
+		self.server = None
+		self.start_server()
+
 		self.update_map()
 
-	# on click	
-	# start sniffing in bg
-	
-	# start query timer
-	# if new ssid to be mapped: dont allow if query timer not 0
-	# reset query timer to X on click
-		
+	def start_server(self):
+		class Handler(http.server.SimpleHTTPRequestHandler):
+			def __init__(self, *args, **kwargs):
+				super().__init__(*args, directory=os.path.dirname(os.path.dirname(os.path.abspath(__file__))), **kwargs)
+
+		self.server = socketserver.TCPServer(("", self.port), Handler)
+		self.server_thread = threading.Thread(target=self.server.serve_forever)
+		self.server_thread.daemon = True
+		self.server_thread.start()
+		logger.info(f"Started local server on port {self.port}")
+
 	def update_list(self):
 		lister = ListWorker()
 		lister.list_update.connect(self.update_list_widget)
@@ -102,28 +117,17 @@ class MainWindow(QtWidgets.QWidget):
 					logger.info(f"Added point: {title} at ({lat}, {lon})")
 		
 		if points_added:
-			# Use a fixed location in the project directory
-			project_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-			map_file = os.path.join(project_dir, "map.html")
+			map_file = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "map.html")
 			with open(map_file, 'w') as f:
 				f.write(map_html)
 			logger.info(f"Writing map to {map_file}")
 			
-			# Load the map in Qt
-			url = QUrl.fromLocalFile(map_file)
-			logger.info(f"Loading map from URL: {url.toString()}")
+			# Load the map from the local server
+			url = QUrl(f"http://localhost:{self.port}/map.html")
+			logger.info(f"Loading URL: {url.toString()}")
 			self.map_widget.load(url)
-			
-			# Connect to loadFinished signal to verify map loaded
-			self.map_widget.loadFinished.connect(self.on_map_loaded)
 		else:
 			logger.warning("No points to display on map")
-
-	def on_map_loaded(self, success):
-		if success:
-			logger.info("Map loaded successfully in Qt")
-		else:
-			logger.error("Failed to load map in Qt")
 
 	def new_map(self, ssid):
 		token = os.getenv('WIGLE_API_TOKEN')
@@ -150,6 +154,9 @@ class MainWindow(QtWidgets.QWidget):
 	def closeEvent(self, event):
 		if hasattr(self, 'packet_sniffer'):
 			self.packet_sniffer.stop()
+		if self.server:
+			self.server.shutdown()
+			self.server.server_close()
 		event.accept()
 
 
