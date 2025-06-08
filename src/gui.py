@@ -11,7 +11,7 @@ from scraper import WigleQuery
 from sqlwrap import Database
 
 def ensure_db():
-	with Database('../ssids.db') as db:
+	with Database('probemap.db') as db:
 		db.create_mac_ssid_table()
 		db.create_ssid_coords_table()
 		db.create_ssid_map_table()
@@ -87,11 +87,12 @@ class MainWindow(QtWidgets.QWidget):
 		map_html = gmap.create_map()
 		
 		# Add pins for all known locations
-		with Database('../ssids.db') as db:
+		with Database('probemap.db') as db:
 			for ssid in db.queried_ssids:
 				coords = db.get_ssid_coords(ssid)
-				for lat, lon in coords:
-					gmap.add_point(map_html, float(lat), float(lon), ssid)
+				for lat, lon, country, region, city in coords:
+					title = f"{ssid} ({city or ''}, {region or ''}, {country or ''})"
+					gmap.add_point(map_html, float(lat), float(lon), title)
 		
 		# Save and display the map
 		map_file = os.path.abspath("../map.html")
@@ -101,9 +102,9 @@ class MainWindow(QtWidgets.QWidget):
 
 	def new_map(self, ssid):
 		query = WigleQuery(ssid)
-		with Database('../ssids.db') as db:
-			for lat, lon in query.coords:
-				db.insert_ssid_coords(ssid, lat, lon)
+		with Database('probemap.db') as db:
+			for lat, lon, country, region, city in query.coords:
+				db.insert_ssid_coords(ssid, lat, lon, country, region, city)
 		self.update_map()  # Update map after adding new coordinates
 
 	def check_list_ssid(self, list_item):
@@ -117,7 +118,7 @@ class MainWindow(QtWidgets.QWidget):
 			ssid  = ''
 
 		if ssid:
-			with Database('../ssids.db') as db:
+			with Database('probemap.db') as db:
 				if ssid not in db.queried_ssids:
 					self.new_map(ssid)
 
@@ -153,7 +154,7 @@ class ListWorker(QtCore.QThread):
 			self.wait()
 
 	def run(self):
-		with Database('../ssids.db') as db:
+		with Database('probemap.db') as db:
 			self.list_update.emit(db.ssids)
 
 

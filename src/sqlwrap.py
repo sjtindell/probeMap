@@ -7,8 +7,8 @@ logger = logging.getLogger(__name__)
 
 class Database:
 	
-	def __init__(self, filename):
-		self.conn = sqlite3.connect(filename)
+	def __init__(self, db_file='probemap.db'):
+		self.conn = sqlite3.connect(db_file)
 		self.cursor = self.conn.cursor()
 		self._init_tables()
 

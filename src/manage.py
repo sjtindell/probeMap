@@ -5,13 +5,13 @@ from sqlwrap import Database
 
 
 def create_tables():
-	with Database('ssids.db') as db:
+	with Database('probemap.db') as db:
 		db.create_mac_ssid_table()
 		db.create_ssid_coords_table()
 		db.create_ssid_map_table()
 
 def reset_tables():
-	with Database('ssids.db') as db:
+	with Database('probemap.db') as db:
 		cmds = (
 			'DROP TABLE IF EXISTS mac_to_ssid',
 			'DROP TABLE IF EXISTS ssid_to_coords',
@@ -22,7 +22,7 @@ def reset_tables():
 	create_tables()
 
 def see_table(table):
-	with Database('ssids.db') as db:
+	with Database('probemap.db') as db:
 		print(db.get_rows(table))
 
 if __name__ == '__main__':

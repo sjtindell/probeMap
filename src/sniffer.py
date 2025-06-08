@@ -75,7 +75,7 @@ class MacSniffer(BaseSniffer):
                     if ssid:
                         print(f"Found SSID: {ssid} from MAC: {mac}")
                         try:
-                            with Database('../ssids.db') as db:
+                            with Database('probemap.db') as db:
                                 db.insert_mac_ssid(mac, ssid)
                                 print(f"Added to database: {mac} -> {ssid}")
                         except Exception as e:
@@ -105,7 +105,7 @@ class LinuxSniffer(BaseSniffer):
                     '\\x82\\x04\\x0b\\x16\\x0c\\x12\\x18$' not in repr(packet.info)):
                     
                     print(f"Found SSID: {packet.info}")
-                    with Database('../ssids.db') as db:
+                    with Database('probemap.db') as db:
                         if packet.info not in [str(ssid) for mac, ssid in db.ssids]:
                             db.insert_mac_ssid(packet.addr2, packet.info)
 
